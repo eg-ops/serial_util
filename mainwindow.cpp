@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QThread>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -7,10 +8,23 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    serial.setPortName(QString("COM5"));
-    serial.open(QIODevice::ReadWrite);
-    connect(&serial, SIGNAL(readyRead()), this, SLOT(readData()));
+
+
+
+    QThread *thread_New = new QThread;
+
+    worker = new WorkerThread;
+
+
+    worker->moveToThread(thread_New);
+    worker->serial->moveToThread(thread_New);
+
+
     connect(ui->sendCmd, SIGNAL(clicked()), this, SLOT(onSendCmd()));
+    connect(this, SIGNAL(sendCommand(QByteArray)), worker, SLOT(sendCommand(QByteArray)));
+
+    thread_New->start();
+
 }
 
 MainWindow::~MainWindow()
@@ -19,38 +33,12 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::onSendCmd(){
+    qDebug() << "onClick Send";
     QByteArray test;
     test.append("test", 4);
     sendCommand(test);
 }
 
-void MainWindow::sendCommand(QByteArray cmd)
-{
-    serialLock.lock();
-
-    currentCmd = cmd;
-    serial.write(cmd);
-    qDebug() << "msg sent";
-    waiter.wait(&serialLock);
-
-
-    currentCmd.clear();
-    serialLock.unlock();
-}
-
-void MainWindow::readData(){
-
-    QByteArray buff = serial.readAll();
-    inputArray.append(buff);
-
-    if (!currentCmd.isEmpty() && inputArray.startsWith(currentCmd)){
-        inputArray.remove(0, currentCmd.size());
-        qDebug() << "response:" << inputArray;
-        waiter.wakeAll();
-    } else {
-        qDebug() << "Unexpected response";
-    }
 
 
 
-}

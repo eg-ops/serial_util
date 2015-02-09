@@ -5,19 +5,32 @@
 #include <QThread>
 #include <QDebug>
 #include <QSerialPort>
+#include <QMutex>
+#include <QWaitCondition>
 
-class WorkerThread : public QThread
+
+class WorkerThread : public QObject
 {
     Q_OBJECT
 private:
 
 protected:
 
-    virtual void run();
 
 public:
-    WorkerThread();
+    explicit WorkerThread(QObject *parent = 0);
     ~WorkerThread();
+
+    QSerialPort * serial;
+    QMutex serialLock;
+    QWaitCondition waiter;
+    QByteArray currentCmd;
+    QByteArray inputArray;
+public slots:
+    void readData();
+
+    void sendCommand(QByteArray cmd);
+
 };
 
 #endif // WORKERTHREAD_H

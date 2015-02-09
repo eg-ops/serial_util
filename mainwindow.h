@@ -1,5 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
+#include "workerthread.h"
 
 #include <QMainWindow>
 #include <QSerialPort>
@@ -18,19 +19,21 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void sendCommand(QByteArray cmd);
+
 
 public slots:
     void onSendCmd();
-    void readData();
+
 
 private:
     Ui::MainWindow *ui;
-    QSerialPort serial;
-    QByteArray inputArray;
-    QMutex serialLock;
-    QWaitCondition waiter;
-    QByteArray currentCmd;
+    WorkerThread * worker;
+
+
+
+signals:
+   void sendCommand(QByteArray cmd);
+
 
 };
 
